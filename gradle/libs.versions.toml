@@ -9,6 +9,7 @@ espressoCore = "3.5.1"
 lifecycleRuntimeKtx = "2.6.1"
 activityCompose = "1.8.0"
 composeBom = "2024.04.01"
+playServicesLocation = "21.3.0"
 volleyVersion = "1.2.1"
 workRuntimeVersion = "2.9.1"
 
@@ -16,6 +17,7 @@ workRuntimeVersion = "2.9.1"
 android-volley = { module = "com.android.volley:volley", version.ref = "volleyVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeVersion" }
+gms-play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 google-gson = { module = "com.google.code.gson:gson", version.ref = "gsonVersion" }
 google-play-services-location = { module = "com.google.android.gms:play-services-location" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

@@ -15,11 +15,11 @@ import com.kogarashi.weather.domain.getWeatherInterpretation
 
 @Composable
 fun CurrentWeatherWidget(currentWeather: CurrentWeather){
-    Text(getWeatherInterpretation(currentWeather.weatherCode), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 30.dp))
+    Text(getWeatherInterpretation(currentWeather.weatherCode), fontSize = 20.sp, modifier = Modifier.padding(top = 30.dp))
     Row(
         verticalAlignment = Alignment.CenterVertically,
     ){
-        Text(currentWeather.temperature.toInt().toString(), fontSize = 150.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp))
+        Text(currentWeather.temperature.toInt().toString(), fontSize = 150.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp))
         WeatherIcon(currentWeather.weatherCode, 70)
     }
     Text("Feels like ${currentWeather.apparentTemperature.toInt()}°C")

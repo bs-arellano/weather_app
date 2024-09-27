@@ -63,6 +63,9 @@ fun WeatherIcon(weatherCode: Int, size: Int = 100) {
         65 -> R.drawable.heavy_rain
         66 -> R.drawable.heavy_rain
         67 -> R.drawable.heavy_rain
+        80 -> R.drawable.scattered_showers_day
+        81 -> R.drawable.scattered_showers_day
+        82 -> R.drawable.scattered_showers_day
         95 -> R.drawable.isolated_thunderstorms
         96 -> R.drawable.isolated_thunderstorms
         99 -> R.drawable.isolated_thunderstorms

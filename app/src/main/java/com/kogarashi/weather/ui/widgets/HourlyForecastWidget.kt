@@ -8,17 +8,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kogarashi.weather.convert24To12
+import com.kogarashi.weather.R
 import com.kogarashi.weather.data.model.HourlyForecast
 import com.kogarashi.weather.domain.WeatherIcon
-import com.kogarashi.weather.getHoursRange
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -29,7 +35,17 @@ fun HourlyForecastWidget(hourlyForecast: HourlyForecast){
             .fillMaxWidth()
             .padding(10.dp, 20.dp)
     ) {
-        Text("Hourly forecast", modifier = Modifier.padding(20.dp), fontSize = 15.sp)
+        Row(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.clock),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                contentDescription = "Hourly Forecast icon",
+                modifier = Modifier.padding(end = 10.dp)
+            )
+            Text("Hourly forecast", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        }
         val scrollState = rememberScrollState()
         Row (
             Modifier.horizontalScroll(scrollState).padding(horizontal = 20.dp).padding(bottom = 20.dp)
@@ -52,4 +68,29 @@ fun HourlyForecastWidget(hourlyForecast: HourlyForecast){
             }
         }
     }
+}
+
+fun getHoursRange(hourlyForecast: HourlyForecast): Int {
+    val currentHour = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+    for (i in 0..<hourlyForecast.time.size) {
+        val forecastHour = LocalDateTime.parse(hourlyForecast.time[i], DateTimeFormatter.ISO_DATE_TIME)
+        if (!forecastHour.isBefore(currentHour)) {
+            return i
+        }
+    }
+    return 0
+}
+
+fun convert24To12(time: String): String {
+    val parts = time.split(":")
+    if (parts.size != 2) {
+        return "Invalid time format"
+    }
+    val hour = parts[0].toInt()
+    if (hour < 0 || hour > 23) {
+        return "Invalid hour"
+    }
+    val amPm = if (hour < 12) "am" else "pm"
+    val hour12 = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+    return String.format(Locale.getDefault(),"%d%s", hour12, amPm)
 }

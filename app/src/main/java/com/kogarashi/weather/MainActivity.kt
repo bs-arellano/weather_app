@@ -1,8 +1,5 @@
 package com.kogarashi.weather
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -13,164 +10,148 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.work.PeriodicWorkRequest
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import com.google.gson.Gson
-import com.kogarashi.weather.data.model.HourlyForecast
-import com.kogarashi.weather.data.model.WeatherResponse
-import com.kogarashi.weather.data.repository.WeatherRepository
+import com.kogarashi.weather.data.model.WeatherData
+import com.kogarashi.weather.domain.PermissionHandler
+import com.kogarashi.weather.domain.fetchCoordinates
+import com.kogarashi.weather.domain.fetchWeatherData
 import com.kogarashi.weather.ui.theme.WeatherTheme
 import com.kogarashi.weather.ui.widgets.CurrentWeatherWidget
 import com.kogarashi.weather.ui.widgets.DailyForecastWidget
 import com.kogarashi.weather.ui.widgets.HourlyForecastWidget
 import com.kogarashi.weather.ui.widgets.MainTopBar
-import com.kogarashi.weather.worker.WeatherWorker
-import fetchCoordinates
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.concurrent.TimeUnit
+
 
 class MainActivity : ComponentActivity() {
-    private val weatherWorkRequest = PeriodicWorkRequestBuilder<WeatherWorker>(20, TimeUnit.MINUTES)
-        .build()
-    private val sharedPreferences: SharedPreferences by lazy {
-        getSharedPreferences("WeatherCache", Context.MODE_PRIVATE)
-    }
+    private lateinit var permissionHandler: PermissionHandler
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        scheduleWeatherWorker(weatherWorkRequest)
         enableEdgeToEdge()
-        setContent {
-            WeatherTheme {
-                Scaffold(
-                    topBar = {
-                        MainTopBar()
-                    }
-                ) { innerPadding->
-                    val scrollState = rememberScrollState()
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding((innerPadding))
-                            .verticalScroll(scrollState),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ){
-                        WeatherScreen(sharedPreferences, LocalContext.current)
-                    }
+        // Set up state to manage which UI to show
+        val coordinatesState = mutableStateOf<Pair<Double, Double>?>(null)
+        val weatherDataState = mutableStateOf<WeatherData?>(null)
+        val permissionGranted = mutableStateOf(false)  // Whether permission is granted
+        val weatherDataFetched = mutableStateOf(false)  // Whether weather data is fetched
+        val permissionDenied = mutableStateOf(false)  // Whether permission is denied
 
-                }
+        permissionHandler = PermissionHandler(this, this)
+
+        // Set up the callback to handle permission result (whether granted or denied)
+        permissionHandler.initialize { isGranted ->
+            if (isGranted) {
+                permissionGranted.value = true
+                fetchWeatherDataIfPermissionGranted(coordinatesState, weatherDataState)
+            } else {
+                permissionDenied.value = true
             }
         }
+        // Check if permission is already granted
+        if (permissionHandler.isLocationPermissionGranted()) {
+            permissionGranted.value = true
+            fetchWeatherDataIfPermissionGranted(coordinatesState, weatherDataState)
+        } else {
+            // Permission not granted, so request it
+            permissionHandler.requestLocationPermission()
+        }
+        setContent {
+            WeatherAppUI(
+                permissionGranted = permissionGranted.value,
+                weatherDataFetched = weatherDataFetched.value,
+                permissionDenied = permissionDenied.value,
+                weatherData = weatherDataState.value,
+                coordinates = coordinatesState.value,
+                onRequestPermissionAgain = {
+                    permissionHandler.requestLocationPermission()
+                }
+            )
+        }
     }
-    private fun scheduleWeatherWorker(workRequest: PeriodicWorkRequest) {
-        WorkManager.getInstance(this).enqueue(workRequest)
+    private fun fetchWeatherDataIfPermissionGranted(
+        coordinatesState: MutableState<Pair<Double, Double>?>,
+        weatherDataState: MutableState<WeatherData?>
+    ) {
+        fetchCoordinates (this) { coordinates ->
+            coordinatesState.value = coordinates
+
+            // Once coordinates are fetched, fetch weather data
+            fetchWeatherData(this, coordinates) { weatherData ->
+                weatherDataState.value = weatherData
+            }
+        }
     }
 }
 
 @Composable
-fun WeatherScreen(sharedPreferences: SharedPreferences, context: Context){
-    var weatherData by remember { mutableStateOf<WeatherResponse?>(null) }
-    var coordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    var trigger by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(true) }
-    val currentTime = System.currentTimeMillis()
-    val lastUpdateTime = sharedPreferences.getLong("lastUpdateTime", 0)
-    val cachedDataJson = sharedPreferences.getString("fetchedWeatherData", null)
-    val gson = Gson()
-    // Check if cached data is available and not expired
-    if (currentTime - lastUpdateTime > 20 * 60 * 1000 || cachedDataJson == null) {
-        isLoading = true
-        Log.w("WeatherScreen", "No cache available or time has expired. Fetching weather data...")
-        Log.v("WeatherScreen","Current cache:\n"+cachedDataJson.toString())
-        // If data is not available or expired, fetch coordinates
-        trigger = !trigger
-    } else {
-        weatherData = gson.fromJson(cachedDataJson, WeatherResponse::class.java)
-        Log.d("WeatherScreen", "Using cached weather data.")
-        Log.d("WeatherScreen", weatherData.toString())
-        isLoading = false
-    }
-    // Fetch coordinates on trigger
-    LaunchedEffect(trigger) {
-        Log.d("WeatherScreen", "Fetching coordinates...")
-        coordinates = fetchCoordinates(context)
-        Log.d("WeatherScreen", "Fetched coordinates on if statement: $coordinates")
-    }
-    //Once coordinates are available, fetch weather data
-    LaunchedEffect(coordinates) {
-        Log.v("WeatherScreen","Coordinates: "+coordinates.toString())
-        val repository = WeatherRepository(context)
-        coordinates?.let { (latitude, longitude) ->
-            repository.fetchWeatherData(
-            latitude,
-            longitude,
-            onSuccess = { weatherResponse ->
-                weatherData = weatherResponse
-                Log.d("RESPONSE",weatherResponse.toString())
-                repository.cacheWeatherData(weatherResponse, context)
-                isLoading = false
-            },
-            onError = { error ->
-                val maxLogSize = 1000
-                val errorMessageLength = error.message?.length ?: 0
-                for (i in 0..errorMessageLength / maxLogSize) {
-                    val start = i * maxLogSize
-                    var end = (i + 1) * maxLogSize
-                    end = if (end > errorMessageLength) errorMessageLength else end
-                    error.message?.let { Log.e("WeatherScreen", it.substring(start, end)) }
+fun WeatherAppUI(
+    weatherData: WeatherData?,
+    permissionGranted: Boolean,
+    coordinates: Pair<Double, Double>?,
+    permissionDenied: Boolean,
+    weatherDataFetched: Boolean,
+    onRequestPermissionAgain: () -> Unit
+) {
+    Log.v("WeatherAppUI", "Weather Data: ${weatherData.toString()}")
+    Log.v("WeatherAppUI", "Permission Granted: $permissionGranted")
+    Log.v("WeatherAppUI", "Coordinates: $coordinates")
+    Log.v("WeatherAppUI", "Permission Denied: $permissionDenied")
+    Log.v("WeatherAppUI", "Weather Data Fetched: $weatherDataFetched")
+    WeatherTheme {
+        Scaffold(topBar = { MainTopBar(LocalContext.current, coordinates)}, ) { innerPadding ->
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding((innerPadding))
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                when {
+                    weatherData != null -> {
+                        // If weather data is fetched, show WeatherDataUI
+                        WeatherScreen(weatherData)
+                    }
+                    permissionDenied -> {
+                        // If permission is denied, show Permission Denied UI
+                        PermissionDeniedUI(onRequestPermissionAgain)
+                    }
+                    else -> {
+                        // Show a loading or waiting state
+                        LoadingUI()
+                    }
                 }
             }
-        )
-        }
-    }
-
-    if (isLoading) {
-        // Show a loading indicator or placeholder
-        Text("Loading...")
-    } else {
-        // Display the weather data
-        weatherData?.let { weatherResponse ->
-            CurrentWeatherWidget(weatherResponse.currentWeather)
-            HourlyForecastWidget(weatherResponse.hourlyForecast)
-            DailyForecastWidget(weatherResponse.dailyForecast)
         }
     }
 }
 
-fun getHoursRange(hourlyForecast: HourlyForecast): Int {
-    val currentHour = LocalDateTime.now()
-    for (i in 0..<hourlyForecast.time.size) {
-        val forecastHour = LocalDateTime.parse(hourlyForecast.time[i], DateTimeFormatter.ISO_DATE_TIME)
-        if (!forecastHour.isBefore(currentHour)) {
-            return i
-        }
-    }
-    return 0
+@Composable
+fun WeatherScreen(weatherData: WeatherData){
+    CurrentWeatherWidget(weatherData.currentWeather)
+    HourlyForecastWidget(weatherData.hourlyForecast)
+    DailyForecastWidget(weatherData.dailyForecast)
 }
 
-@SuppressLint("DefaultLocale")
-fun convert24To12(time: String): String {
-    val parts = time.split(":")
-    if (parts.size != 2) {
-        return "Invalid time format"
+@Composable
+fun PermissionDeniedUI(onRequestPermissionAgain: () -> Unit) {
+    // UI to show when the permission is denied
+    Column {
+        Text("Location permission is required to fetch weather data.")
+        Button(onClick = onRequestPermissionAgain) {
+            Text("Request Permission Again")
+        }
     }
-    val hour = parts[0].toInt()
-    if (hour < 0 || hour > 23) {
-        return "Invalid hour"
-    }
-    val amPm = if (hour < 12) "am" else "pm"
-    val hour12 = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
-    return String.format("%d%s", hour12, amPm)
+}
+
+@Composable
+fun LoadingUI() {
+    // UI shown while waiting for permission or data fetching
+    Text("Loading...")
 }

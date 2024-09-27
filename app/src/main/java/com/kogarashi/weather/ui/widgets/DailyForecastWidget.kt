@@ -8,15 +8,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kogarashi.weather.R
 import com.kogarashi.weather.data.model.DailyForecast
 import com.kogarashi.weather.domain.WeatherIcon
-import java.time.LocalDateTime
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -31,7 +35,17 @@ fun DailyForecastWidget(dailyForecast: DailyForecast){
             .fillMaxWidth()
             .padding(10.dp, 20.dp)
     ) {
-        Text("Daily forecast", modifier = Modifier.padding(20.dp), fontSize = 15.sp)
+        Row(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.calendar),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                contentDescription = "Daily Forecast icon",
+                modifier = Modifier.padding(end = 10.dp)
+            )
+            Text("Daily forecast", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

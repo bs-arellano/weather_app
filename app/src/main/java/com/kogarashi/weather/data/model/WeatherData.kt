@@ -1,6 +1,6 @@
 package com.kogarashi.weather.data.model
 
-data class WeatherResponse (
+data class WeatherData (
     val latitude: Double,
     val longitude: Double,
     val timezone: String,
