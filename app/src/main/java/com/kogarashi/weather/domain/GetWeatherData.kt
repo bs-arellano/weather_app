@@ -1,9 +1,7 @@
 package com.kogarashi.weather.domain
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
-import com.google.gson.Gson
 import com.kogarashi.weather.data.model.WeatherData
 import com.kogarashi.weather.data.repository.WeatherRepository
 
@@ -11,18 +9,13 @@ fun fetchWeatherData(context: Context, coordinates: Pair<Double, Double>, onWeat
     Log.d("fetchWeatherData", "Fetching weather data for coordinates: $coordinates")
     val repository = WeatherRepository(context)
     val (latitude, longitude) = coordinates
-    val sharedPreferences: SharedPreferences by lazy {
-        context.getSharedPreferences("WeatherCache", Context.MODE_PRIVATE)
-    }
     val currentTime = System.currentTimeMillis()
-    val lastUpdateTime = sharedPreferences.getLong("lastUpdateTime", 0)
+    val lastUpdateTime = repository.getLastUpdateTime(context)
     val cacheValidity = 10 * 60 * 1000 // 10 minutes in milliseconds
     if (currentTime - lastUpdateTime < cacheValidity) {
         Log.d("fetchWeatherData", "Using cached weather data")
-        val cachedDataJson = sharedPreferences.getString("fetchedWeatherData", null)
-        if (cachedDataJson != null) {
-            val gson = Gson()
-            val cachedWeatherData = gson.fromJson(cachedDataJson, WeatherData::class.java)
+        val cachedWeatherData = repository.getCachedWeatherData(context)
+        if (cachedWeatherData != null) {
             onWeatherDataFetched(cachedWeatherData)
         }
     } else {

@@ -46,6 +46,15 @@ fun getWeatherInterpretation(weatherCode: Int): String {
 //Dictionary of WMO Weather Images
 @Composable
 fun WeatherIcon(weatherCode: Int, size: Int = 100) {
+    val id = getWeatherIcon(weatherCode)
+    Image(
+        painter = painterResource(id = id),
+        contentDescription = getWeatherInterpretation(weatherCode),
+        modifier = Modifier.size(size.dp)
+    )
+}
+
+fun getWeatherIcon(weatherCode: Int): Int{
     val id: Int = when(weatherCode){
         0 -> R.drawable.clear_day
         1 -> R.drawable.mostly_clear_day
@@ -73,9 +82,5 @@ fun WeatherIcon(weatherCode: Int, size: Int = 100) {
 
         else -> R.drawable.ban
     }
-    Image(
-        painter = painterResource(id = id),
-        contentDescription = getWeatherInterpretation(weatherCode),
-        modifier = Modifier.size(size.dp)
-    )
+    return  id
 }

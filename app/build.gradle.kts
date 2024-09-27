@@ -11,8 +11,8 @@ android {
         applicationId = "com.kogarashi.weather"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.2"
+        versionCode = 4
+        versionName = "0.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -62,6 +62,9 @@ dependencies {
     implementation(libs.google.gson)
     implementation(libs.androidx.work.runtime)
     implementation(libs.gms.play.services.location)
+    implementation(libs.glance)
+    implementation(libs.glance.appwidget)
+    implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

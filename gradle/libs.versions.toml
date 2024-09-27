@@ -1,5 +1,8 @@
 [versions]
 agp = "8.6.1"
+datastorePreferences = "1.1.1"
+glance = "1.1.0"
+glanceAppwidget = "1.1.0"
 gsonVersion = "2.11.0"
 kotlin = "1.9.0"
 coreKtx = "1.10.1"
@@ -16,7 +19,12 @@ workRuntimeVersion = "2.9.1"
 [libraries]
 android-volley = { module = "com.android.volley:volley", version.ref = "volleyVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+androidx-glance = { module = "androidx.glance:glance" }
+androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeVersion" }
+glance = { module = "androidx.glance:glance", version.ref = "glance" }
+glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glanceAppwidget" }
 gms-play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 google-gson = { module = "com.google.code.gson:gson", version.ref = "gsonVersion" }
 google-play-services-location = { module = "com.google.android.gms:play-services-location" }
