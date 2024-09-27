@@ -1,13 +1,13 @@
 package com.kogarashi.weather.domain
 
 import android.annotation.SuppressLint
-import android.app.Activity
+import android.content.Context
 import com.google.android.gms.location.LocationServices
 
 // Function to fetch the user's coordinates
 @SuppressLint("MissingPermission") // Ensure permissions are checked before calling this function
-fun fetchCoordinates(activity: Activity, onCoordinatesFetched: (Pair<Double, Double>) -> Unit) {
-    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
+fun fetchCoordinates(context: Context, onCoordinatesFetched: (Pair<Double, Double>) -> Unit) {
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
         location?.let {
