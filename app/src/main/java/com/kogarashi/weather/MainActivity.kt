@@ -21,15 +21,16 @@ class MainActivity : ComponentActivity() {
     private lateinit var permissionHandler: PermissionHandler
     private val weatherWorkRequest = PeriodicWorkRequestBuilder<WeatherWorker>(1, TimeUnit.HOURS)
         .build()
+    // Set up state to manage which UI to show
+    val coordinatesState = mutableStateOf<Pair<Double, Double>?>(null)
+    val weatherDataState = mutableStateOf<WeatherData?>(null)
+    val permissionGranted = mutableStateOf(false)  // Whether permission is granted
+    val weatherDataFetched = mutableStateOf(false)  // Whether weather data is fetched
+    val permissionDenied = mutableStateOf(false)  // Whether permission is denied
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Set up state to manage which UI to show
-        val coordinatesState = mutableStateOf<Pair<Double, Double>?>(null)
-        val weatherDataState = mutableStateOf<WeatherData?>(null)
-        val permissionGranted = mutableStateOf(false)  // Whether permission is granted
-        val weatherDataFetched = mutableStateOf(false)  // Whether weather data is fetched
-        val permissionDenied = mutableStateOf(false)  // Whether permission is denied
+
 
         permissionHandler = PermissionHandler(this, this)
 
@@ -42,6 +43,7 @@ class MainActivity : ComponentActivity() {
                 permissionDenied.value = true
             }
         }
+
         // Check if permission is already granted
         if (permissionHandler.isLocationPermissionGranted()) {
             permissionGranted.value = true
@@ -51,6 +53,7 @@ class MainActivity : ComponentActivity() {
             // Permission not granted, so request it
             permissionHandler.requestLocationPermission()
         }
+
         setContent {
             WeatherAppUI(
                 permissionGranted = permissionGranted.value,
@@ -64,13 +67,19 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        if (weatherDataState.value!=null && coordinatesState.value!=null){
+            fetchWeatherDataIfPermissionGranted(coordinatesState, weatherDataState)
+        }
+    }
     private fun fetchWeatherDataIfPermissionGranted(
         coordinatesState: MutableState<Pair<Double, Double>?>,
         weatherDataState: MutableState<WeatherData?>
     ) {
         fetchCoordinates (this) { coordinates ->
             coordinatesState.value = coordinates
-
             // Once coordinates are fetched, fetch weather data
             fetchWeatherData(this, coordinates) { weatherData ->
                 weatherDataState.value = weatherData

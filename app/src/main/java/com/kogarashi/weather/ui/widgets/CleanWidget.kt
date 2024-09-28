@@ -2,8 +2,12 @@ package com.kogarashi.weather.ui.widgets
 
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -13,6 +17,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.updateAll
@@ -28,12 +33,14 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.kogarashi.weather.MainActivity
 import com.kogarashi.weather.data.repository.WeatherRepository
 import com.kogarashi.weather.data.repository.dataStore
 import com.kogarashi.weather.domain.getWeatherIcon
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
@@ -44,6 +51,7 @@ class CleanWidget: GlanceAppWidget() {
     val CurrentWeatherCode = intPreferencesKey("currentWeatherCode")
 
     suspend fun DataStore<Preferences>.loadWeather(context: Context) {
+        Log.d("WeatherWidgetWorker", "Loading weather data from cache")
         val repository = WeatherRepository(context)
         updateData { prefs ->
             prefs.toMutablePreferences().apply {
@@ -80,6 +88,7 @@ class CleanWidget: GlanceAppWidget() {
                 val weatherCode by currentWeatherCode.collectAsState()
                 val currentDay = LocalDateTime.now()
                 val displayedDay = "${currentDay.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }.substring(0, 3)}, ${currentDay.month.name.lowercase().replaceFirstChar { it.uppercase() }.substring(0, 3)} ${currentDay.dayOfMonth}"
+                val scope = rememberCoroutineScope()
                 Column(
                     modifier = GlanceModifier.fillMaxSize().padding(5.dp),
                     horizontalAlignment = Alignment.Horizontal.Start,
@@ -88,12 +97,34 @@ class CleanWidget: GlanceAppWidget() {
                     Text(displayedDay,style = androidx.glance.text.TextStyle(
                         fontSize = 22.sp,
                         fontWeight = androidx.glance.text.FontWeight.Normal,
-                        color = androidx.glance.color.ColorProvider(day=Color.White, night = Color.White)
-                    )
+                        color = androidx.glance.color.ColorProvider(day=Color.White, night = Color.White),
+                    ),
+                        modifier = GlanceModifier.clickable {
+                            scope.launch {
+                                val launchIntent = context.packageManager.getLaunchIntentForPackage("com.google.android.calendar")
+                                Log.v("WeatherWidgetWorker", "Launch Intent: $launchIntent")
+                                if (launchIntent != null) {
+                                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(launchIntent)
+                                } else {
+                                    val playStoreIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.calendar"))
+                                    playStoreIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(playStoreIntent)
+                                }
+                            }
+                        }
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = GlanceModifier.padding(top = 5.dp)
+                            .clickable {
+                                scope.launch {
+                                    context.dataStore.loadWeather(context)
+                                    val intent = Intent(context, MainActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    context.startActivity(intent)
+                                }
+                            },
                     )
                     {
                         Image(
