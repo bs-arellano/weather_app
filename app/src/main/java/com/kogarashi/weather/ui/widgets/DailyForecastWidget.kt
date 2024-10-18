@@ -33,18 +33,18 @@ fun DailyForecastWidget(dailyForecast: DailyForecast){
         shape = RoundedCornerShape(25.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp, 20.dp)
+            .padding(10.dp,15.dp)
     ) {
         Row(
             modifier = Modifier.padding(20.dp)
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.calendar),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.onSurface,
                 contentDescription = "Daily Forecast icon",
                 modifier = Modifier.padding(end = 10.dp)
             )
-            Text("Daily forecast", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text("Daily forecast", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
         }
         Row(
             modifier = Modifier
@@ -70,7 +70,7 @@ fun DailyForecastWidget(dailyForecast: DailyForecast){
                         modifier = Modifier.padding(bottom = 10.dp)
                     ){
                         if (dailyForecast.precipitation[i] > 20) {
-                            Text(dailyForecast. precipitation[ i] . toString( )  + "%")
+                            Text(((dailyForecast.precipitation[i]/10f).toInt()*10).toString()  + "%", color = MaterialTheme.colorScheme.secondary)
                         }
                         //Text(String.format("%02d", dailyForecast.weatherCode[i]))
                         WeatherIcon(dailyForecast.weatherCode[i], size = 20)

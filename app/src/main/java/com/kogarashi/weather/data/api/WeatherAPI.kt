@@ -27,7 +27,7 @@ class WeatherApi(private val context: Context) {
     )
 
     fun getWeatherData(latitude: Double, longitude: Double, onSuccess: (WeatherData) -> Unit, onError: (Exception) -> Unit) {
-        val url = "https://api.open-meteo.com/v1/forecast?latitude=$latitude&longitude=$longitude&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto"
+        val url = "https://api.open-meteo.com/v1/forecast?latitude=$latitude&longitude=$longitude&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max&timezone=auto"
         Log.d("API", "Fetching data from $url")
         val request = JsonObjectRequest(
             Request.Method.GET, url, null,

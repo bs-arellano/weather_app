@@ -8,4 +8,5 @@ data class DailyForecast(
     @SerializedName("temperature_2m_max") val maxTemperature: ArrayList<Float>,
     @SerializedName("temperature_2m_min") val minTemperature: ArrayList<Float>,
     @SerializedName("precipitation_probability_max") val precipitation: ArrayList<Int>,
+    @SerializedName("uv_index_max") val uvIndex: ArrayList<Float>
 )

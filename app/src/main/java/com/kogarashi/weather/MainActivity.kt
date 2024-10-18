@@ -1,11 +1,13 @@
 package com.kogarashi.weather
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.kogarashi.weather.data.model.WeatherData
@@ -22,15 +24,14 @@ class MainActivity : ComponentActivity() {
     private val weatherWorkRequest = PeriodicWorkRequestBuilder<WeatherWorker>(1, TimeUnit.HOURS)
         .build()
     // Set up state to manage which UI to show
-    val coordinatesState = mutableStateOf<Pair<Double, Double>?>(null)
-    val weatherDataState = mutableStateOf<WeatherData?>(null)
-    val permissionGranted = mutableStateOf(false)  // Whether permission is granted
-    val weatherDataFetched = mutableStateOf(false)  // Whether weather data is fetched
-    val permissionDenied = mutableStateOf(false)  // Whether permission is denied
+    private val coordinatesState = mutableStateOf<Pair<Double, Double>?>(null)
+    private val weatherDataState = mutableStateOf<WeatherData?>(null)
+    private val permissionGranted = mutableStateOf(false)  // Whether permission is granted
+    private val weatherDataFetched = mutableStateOf(false)  // Whether weather data is fetched
+    private val permissionDenied = mutableStateOf(false)  // Whether permission is denied
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
+        super.onCreate(savedInstanceState)
 
         permissionHandler = PermissionHandler(this, this)
 
@@ -47,7 +48,8 @@ class MainActivity : ComponentActivity() {
         // Check if permission is already granted
         if (permissionHandler.isLocationPermissionGranted()) {
             permissionGranted.value = true
-            WorkManager.getInstance(this).enqueue(weatherWorkRequest)
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork("weatherWork", ExistingPeriodicWorkPolicy.KEEP, weatherWorkRequest)
+            Log.d("MainActivity", "Worker enqueued")
             fetchWeatherDataIfPermissionGranted(coordinatesState, weatherDataState)
         } else {
             // Permission not granted, so request it

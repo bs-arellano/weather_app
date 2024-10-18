@@ -25,9 +25,9 @@ fun MainTopBar(context: Context, coordinates: Pair<Double, Double>?){
 
 @SuppressLint("MissingPermission")
 @Composable
-fun getCurrentCity(context: Context, coordinates: Pair<Double, Double>): String {
+fun getCurrentCity(context: Context, coordinates: Pair<Double, Double>?): String {
     var city by remember { mutableStateOf("") }
-    coordinates.let { (latitude, longitude) ->
+    coordinates?.let { (latitude, longitude) ->
         val geocoder = Geocoder(context, Locale.getDefault())
         val addresses = geocoder.getFromLocation(latitude, longitude, 1)
         if (addresses!!.isNotEmpty()) {

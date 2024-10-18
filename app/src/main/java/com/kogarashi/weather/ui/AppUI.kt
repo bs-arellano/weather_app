@@ -1,7 +1,11 @@
 package com.kogarashi.weather.ui
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -13,12 +17,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.kogarashi.weather.data.model.WeatherData
 import com.kogarashi.weather.ui.theme.WeatherTheme
 import com.kogarashi.weather.ui.widgets.CurrentWeatherWidget
 import com.kogarashi.weather.ui.widgets.DailyForecastWidget
+import com.kogarashi.weather.ui.widgets.FroggieImage
 import com.kogarashi.weather.ui.widgets.HourlyForecastWidget
 import com.kogarashi.weather.ui.widgets.MainTopBar
+import com.kogarashi.weather.ui.widgets.RelativeHumidityWidget
+import com.kogarashi.weather.ui.widgets.UVIndexWidget
 
 @Composable
 fun WeatherAppUI(
@@ -37,10 +45,11 @@ fun WeatherAppUI(
     WeatherTheme {
         Scaffold(topBar = { MainTopBar(LocalContext.current, coordinates) }, ) { innerPadding ->
             val scrollState = rememberScrollState()
+            val modifiedPadding = PaddingValues(top = innerPadding.calculateTopPadding(), bottom = 0.dp)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding((innerPadding))
+                    .padding(modifiedPadding)
                     .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ){
@@ -68,6 +77,21 @@ fun WeatherScreen(weatherData: WeatherData){
     CurrentWeatherWidget(weatherData.currentWeather)
     HourlyForecastWidget(weatherData.hourlyForecast)
     DailyForecastWidget(weatherData.dailyForecast)
+    WeatherConditions(weatherData)
+    FroggieImage(weatherData.currentWeather.weatherCode + if (weatherData.currentWeather.isDay==1) 0 else 100)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun WeatherConditions(weatherData: WeatherData){
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp), // Adjust spacing as needed
+        verticalArrangement = Arrangement.spacedBy(8.dp) // Adjust spacing as needed
+    ){
+        RelativeHumidityWidget(weatherData.currentWeather)
+        UVIndexWidget(weatherData.dailyForecast.uvIndex[0].toInt())
+    }
 }
 
 @Composable

@@ -33,18 +33,18 @@ fun HourlyForecastWidget(hourlyForecast: HourlyForecast){
         shape = RoundedCornerShape(25.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp, 20.dp)
+            .padding(10.dp,15.dp)
     ) {
         Row(
             modifier = Modifier.padding(20.dp)
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.clock),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.onSurface,
                 contentDescription = "Hourly Forecast icon",
                 modifier = Modifier.padding(end = 10.dp)
             )
-            Text("Hourly forecast", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text("Hourly forecast", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
         }
         val scrollState = rememberScrollState()
         Row (
@@ -57,9 +57,10 @@ fun HourlyForecastWidget(hourlyForecast: HourlyForecast){
                 ) {
                     Text(hourlyForecast.temperature[i].roundToInt().toString() + "°", fontWeight = FontWeight.SemiBold)
                     //Text(hourlyForecast.weatherCode[i].toString())
-                    WeatherIcon(hourlyForecast.weatherCode[i], size = 20)
+                    val fixedWeatherCode = hourlyForecast.weatherCode[i] + if (isHourDay(hourlyForecast.time[i].substring(11))) 0 else 100
+                    WeatherIcon(fixedWeatherCode, size = 20)
                     if (hourlyForecast.precipitation[i] > 20) {
-                        Text(hourlyForecast. precipitation[ i] . toString( )  + "%")
+                        Text(((hourlyForecast.precipitation[i]/10f).toInt()*10).toString()  + "%", color = MaterialTheme.colorScheme.secondary)
                     }else{
                         Text("")
                     }
@@ -93,4 +94,13 @@ fun convert24To12(time: String): String {
     val amPm = if (hour < 12) "am" else "pm"
     val hour12 = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
     return String.format(Locale.getDefault(),"%d%s", hour12, amPm)
+}
+
+fun isHourDay(time: String): Boolean {
+    val parts = time.split(":")
+    if (parts.size != 2) {
+        return false
+    }
+    val hour = parts[0].toInt()
+    return hour in 6..17
 }

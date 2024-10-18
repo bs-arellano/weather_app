@@ -15,9 +15,11 @@ composeBom = "2024.04.01"
 playServicesLocation = "21.3.0"
 volleyVersion = "1.2.1"
 workRuntimeVersion = "2.9.1"
+graphicsShapesAndroid = "1.0.1"
 
 [libraries]
 android-volley = { module = "com.android.volley:volley", version.ref = "volleyVersion" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-glance = { module = "androidx.glance:glance" }
@@ -42,6 +44,7 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 play-services-location = { module = "com.google.android.gms:play-services-location" }
+androidx-graphics-shapes-android = { group = "androidx.graphics", name = "graphics-shapes-android", version.ref = "graphicsShapesAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -59,25 +59,16 @@ fun getWeatherIcon(weatherCode: Int): Int{
         0 -> R.drawable.clear_day
         1 -> R.drawable.mostly_clear_day
         2 -> R.drawable.mostly_cloudy_day
-        3 -> R.drawable.cloudy
-        45 -> R.drawable.haze_fog_dust_smoke
-        48 -> R.drawable.haze_fog_dust_smoke
-        51 -> R.drawable.drizzle
-        53 -> R.drawable.drizzle
-        55 -> R.drawable.drizzle
-        56 -> R.drawable.drizzle
-        57 -> R.drawable.drizzle
-        61 -> R.drawable.scattered_showers_day
-        63 -> R.drawable.scattered_showers_day
-        65 -> R.drawable.heavy_rain
-        66 -> R.drawable.heavy_rain
-        67 -> R.drawable.heavy_rain
-        80 -> R.drawable.scattered_showers_day
-        81 -> R.drawable.scattered_showers_day
-        82 -> R.drawable.scattered_showers_day
-        95 -> R.drawable.isolated_thunderstorms
-        96 -> R.drawable.isolated_thunderstorms
-        99 -> R.drawable.isolated_thunderstorms
+        3,103 -> R.drawable.cloudy
+        45,48,145,148 -> R.drawable.haze_fog_dust_smoke
+        51,53,55,56,57,151,153,155,156,157 -> R.drawable.drizzle
+        61,63,80,81,82 -> R.drawable.scattered_showers_day
+        65,66,67,165,166,167 -> R.drawable.heavy_rain
+        95,96,99,195,196,199 -> R.drawable.isolated_thunderstorms
+        100 -> R.drawable.clear_night
+        101 -> R.drawable.mostly_clear_night
+        102 -> R.drawable.mostly_cloudy_night
+        161,163,180,181,182 -> R.drawable.scattered_showers_night
 
 
         else -> R.drawable.ban

@@ -1,9 +1,12 @@
 package com.kogarashi.weather.ui.widgets
 
 
+import android.app.WallpaperColors
+import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,17 +50,19 @@ import kotlin.time.toJavaDuration
 
 class CleanWidget: GlanceAppWidget() {
 
-    val CurrentDegrees = intPreferencesKey("currentDegrees")
-    val CurrentWeatherCode = intPreferencesKey("currentWeatherCode")
+    private val currentDegrees = intPreferencesKey("currentDegrees")
+    private val currentWeatherCode = intPreferencesKey("currentWeatherCode")
+    private val isDay = intPreferencesKey("currentIsDay")
 
     suspend fun DataStore<Preferences>.loadWeather(context: Context) {
-        Log.d("WeatherWidgetWorker", "Loading weather data from cache")
+        Log.d("WeatherWidget", "Loading weather data from cache")
         val repository = WeatherRepository(context)
         updateData { prefs ->
             prefs.toMutablePreferences().apply {
                 val cachedWeatherData = repository.getCachedWeatherData(context)
-                this[CurrentDegrees] = cachedWeatherData?.currentWeather?.temperature?.toInt() ?: 0
-                this[CurrentWeatherCode] = cachedWeatherData?.currentWeather?.weatherCode ?: -1
+                this[currentDegrees] = cachedWeatherData?.currentWeather?.temperature?.toInt() ?: 0
+                this[currentWeatherCode] = cachedWeatherData?.currentWeather?.weatherCode ?: -1
+                this[isDay] = cachedWeatherData?.currentWeather?.isDay ?: 1
             }
         }
     }
@@ -66,10 +71,13 @@ class CleanWidget: GlanceAppWidget() {
         coroutineScope {
             val store = context.dataStore
             val currentDegrees = store.data
-                .map { prefs -> prefs[CurrentDegrees] }
+                .map { prefs -> prefs[currentDegrees] }
                 .stateIn(this@coroutineScope)
             val currentWeatherCode = store.data
-                .map { prefs -> prefs[CurrentWeatherCode] }
+                .map { prefs -> prefs[currentWeatherCode] }
+                .stateIn(this@coroutineScope)
+            val currentIsDay = store.data
+                .map { prefs -> prefs[isDay] }
                 .stateIn(this@coroutineScope)
             // Load the current weather if there is not a current value present.
             if (currentDegrees.value == null || currentWeatherCode.value == null) store.loadWeather(context)
@@ -86,18 +94,36 @@ class CleanWidget: GlanceAppWidget() {
             provideContent {
                 val degrees by currentDegrees.collectAsState()
                 val weatherCode by currentWeatherCode.collectAsState()
+                val isDay by currentIsDay.collectAsState()
                 val currentDay = LocalDateTime.now()
+                val fixedWeatherCode = weatherCode?.let {
+                    it + if (isDay==1) 0 else 100
+                }?:-1
                 val displayedDay = "${currentDay.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }.substring(0, 3)}, ${currentDay.month.name.lowercase().replaceFirstChar { it.uppercase() }.substring(0, 3)} ${currentDay.dayOfMonth}"
                 val scope = rememberCoroutineScope()
+                val wallpaperColors: WallpaperColors? = WallpaperManager.getInstance(context).getWallpaperColors(WallpaperManager.FLAG_SYSTEM)
+                var preferredTexColor = Color.White
+                if (wallpaperColors != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    wallpaperColors.let { colors ->
+                        // Check if the wallpaper supports dark text
+                        val darkTextSupported = colors.colorHints and WallpaperColors.HINT_SUPPORTS_DARK_TEXT != 0
+
+                        preferredTexColor = if (darkTextSupported) {
+                            Color.Black
+                        } else {
+                            Color.White
+                        }
+                    }
+                }
                 Column(
-                    modifier = GlanceModifier.fillMaxSize().padding(5.dp),
+                    modifier = GlanceModifier.fillMaxSize().padding(vertical = 5.dp, horizontal = 20.dp),
                     horizontalAlignment = Alignment.Horizontal.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(displayedDay,style = androidx.glance.text.TextStyle(
                         fontSize = 22.sp,
                         fontWeight = androidx.glance.text.FontWeight.Normal,
-                        color = androidx.glance.color.ColorProvider(day=Color.White, night = Color.White),
+                        color = androidx.glance.color.ColorProvider(day=preferredTexColor, night = preferredTexColor),
                     ),
                         modifier = GlanceModifier.clickable {
                             scope.launch {
@@ -119,25 +145,25 @@ class CleanWidget: GlanceAppWidget() {
                         modifier = GlanceModifier.padding(top = 5.dp)
                             .clickable {
                                 scope.launch {
-                                    context.dataStore.loadWeather(context)
                                     val intent = Intent(context, MainActivity::class.java)
                                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                     context.startActivity(intent)
+                                    context.dataStore.loadWeather(context)
                                 }
                             },
                     )
                     {
                         Image(
                             provider = androidx.glance.ImageProvider(
-                                getWeatherIcon(weatherCode?:-1)
+                                getWeatherIcon(fixedWeatherCode)
                             ),
                             contentDescription = "Weather Icon",
                             modifier = GlanceModifier.size(25.dp).padding(end = 10.dp)
                         )
                         Text("$degrees°C", style = androidx.glance.text.TextStyle(
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             fontWeight = androidx.glance.text.FontWeight.Normal,
-                            color = androidx.glance.color.ColorProvider(day=Color.White, night = Color.White),
+                            color = androidx.glance.color.ColorProvider(day=preferredTexColor, night = preferredTexColor),
                         ))
                     }
                 }
@@ -152,6 +178,7 @@ class WeatherWidgetWorker(
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
+        Log.d("WeatherWidgetWorker", "doWork() called")
         CleanWidget().apply {
             applicationContext.dataStore.loadWeather(applicationContext)
             // Call update/updateAll in case a Worker for the widget is not currently running.
